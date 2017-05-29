@@ -1,0 +1,6 @@
+MD5 (ckc1.bin) = cfea90356a2b295c6513005d1bb60e3e
+MD5 (ckc2.bin) = 8a3b9e647f1057eba870d63613e29632
+MD5 (ckc3.bin) = 143b1af66d884684965942415eb556db
+MD5 (spc1.bin) = 8019eebee98a1396ebe500a5dfd755a4
+MD5 (spc2.bin) = 134258f36fc2efab3f26e83b31f86108
+MD5 (spc3.bin) = c34dd9c0f3ffefc76997f2e165991e86
