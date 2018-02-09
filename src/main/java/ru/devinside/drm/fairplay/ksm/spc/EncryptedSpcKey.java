@@ -3,18 +3,18 @@ package ru.devinside.drm.fairplay.ksm.spc;
 import java.nio.ByteBuffer;
 
 /**
- * Encrypted AES-128 key.
- * The key for decrypting the SPC payload.
+ * Encrypted AES-128 key. The key for decrypting the SPC payload.
  * This key is itself encrypted, using RSA public key encryption with Optimal Asymmetric Encryption Padding (OAEP).
  *
- * @see Spck
+ * @see SpcKey
  */
-public class SpckRaw {
-    public final static int SPCK_RAW_SIZE = 128;
+@Deprecated
+public class EncryptedSpcKey {
+    public final static int ENCRYPTED_SPC_KEY_SIZE = 128;
 
     private final byte[] spckEncrypted;
 
-    public SpckRaw(byte[] spckEncrypted) {
+    public EncryptedSpcKey(byte[] spckEncrypted) {
         this.spckEncrypted = spckEncrypted;
     }
 
@@ -22,9 +22,9 @@ public class SpckRaw {
         return spckEncrypted;
     }
 
-    public static SpckRaw from(ByteBuffer buffer) {
-        byte[] spckEncrypted = new byte[SPCK_RAW_SIZE];
+    public static EncryptedSpcKey from(ByteBuffer buffer) {
+        byte[] spckEncrypted = new byte[ENCRYPTED_SPC_KEY_SIZE];
         buffer.get(spckEncrypted);
-        return new SpckRaw(spckEncrypted);
+        return new EncryptedSpcKey(spckEncrypted);
     }
 }

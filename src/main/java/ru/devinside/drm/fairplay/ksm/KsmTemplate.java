@@ -1,7 +1,12 @@
 package ru.devinside.drm.fairplay.ksm;
 
-import java.io.IOException;
+import ru.devinside.drm.fairplay.ksm.ckc.Ckc;
+import ru.devinside.drm.fairplay.ksm.secret.ContentKey;
+import ru.devinside.drm.fairplay.ksm.spc.AssetId;
+import ru.devinside.drm.fairplay.ksm.spc.Spc;
+
+import java.util.function.Function;
 
 public interface KsmTemplate {
-    byte[] generateCkc(byte[] spc) throws IOException;
+    Ckc process(Spc spc, Function<AssetId, ContentKey> keyFunction);
 }

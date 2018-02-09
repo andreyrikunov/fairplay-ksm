@@ -1,34 +1,29 @@
 package ru.devinside.drm.fairplay.ksm;
 
 import ru.devinside.drm.fairplay.ksm.ckc.*;
+import ru.devinside.drm.fairplay.ksm.common.BinVal;
 import ru.devinside.drm.fairplay.ksm.common.TllvBlock;
-import ru.devinside.drm.fairplay.ksm.secret.ApplicationSecretKey;
 import ru.devinside.drm.fairplay.ksm.secret.ContentKey;
 import ru.devinside.drm.fairplay.ksm.spc.*;
 import ru.devinside.drm.fairplay.ksm.spc.tags.SkR1Integrity;
 import ru.devinside.drm.fairplay.ksm.spc.tags.SpcR2;
 import ru.devinside.drm.fairplay.ksm.spc.tags.SpcSkR1;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.util.function.Function;
 
 public class DefaultKsmTemplate implements KsmTemplate {
-    private final SpcMessageParser spcMessageParser = new SpcMessageParser();
-    private final SpcPayloadParser payloadParser = new SpcPayloadParser();
-    private final SpcSecurityContext securityContext;
+    private final SpcSecurityService security;
 
-    public DefaultKsmTemplate(SpcSecurityContext securityContext) {
-        this.securityContext = securityContext;
+    public DefaultKsmTemplate(SpcSecurityService security) {
+        this.security = security;
     }
 
     @Override
-    public byte[] generateCkc(byte[] spc) throws IOException {
-        SpcMessage spcMessage = spcMessageParser.parse(spc);
+    public Ckc process(Spc spc, Function<AssetId, ContentKey> keyFunction) {
+        SpcKey spcKey = security.decryptSpcKey(spc.getEncryptedSpcKey());
+        SpcPayload payload = security.decryptPayload(spc, spcKey);
 
-        Spck spck = securityContext.decryptSpck(spcMessage.getEncryptedSpck());
-        SpcPayload payload = securityContext.decryptPayload(spcMessage.getPayload(), spck, spcMessage.getIv());
-
-        SpcTllvContainer tllvContainer = payloadParser.parse(payload);
+        SpcTllvIndex tllvContainer = new SpcPayloadReader(payload).index();
 
         TllvBlock tllvSkR1 = tllvContainer.find(SpcTag.SK_R1);
         SpcSkR1Raw spcSkR1Raw = new SpcSkR1Raw(tllvSkR1);
@@ -36,18 +31,20 @@ public class DefaultKsmTemplate implements KsmTemplate {
         TllvBlock tllvR2 = tllvContainer.find(SpcTag.R2);
         SpcR2 spcR2 = new SpcR2(tllvR2);
 
-        SpcSkR1 spcSkR1 = securityContext.decryptSkR1(spcSkR1Raw, spcR2, new ApplicationSecretKey());
+        SpcSkR1 spcSkR1 = security.decryptSkR1(spcSkR1Raw, spcR2);
 
         TllvBlock tllvSkR1Integrity = tllvContainer.find(SpcTag.SK_R1_INTEGRITY);
 
-        if(!securityContext.integrityCheckSkR1(spcSkR1, new SkR1Integrity(tllvSkR1Integrity))) {
+        if(!security.integrityCheckSkR1(spcSkR1, new SkR1Integrity(tllvSkR1Integrity))) {
             throw new IllegalArgumentException("Bad SPC message");
         }
 
-        //
-        // CKC generation part begins here:
-        //
+        AssetId assetId = new AssetId(new BinVal(tllvContainer.find(SpcTag.ASSET_ID).getValue()));
 
+        return generateCkc(spcSkR1, tllvContainer, keyFunction.apply(assetId));
+    }
+
+    private Ckc generateCkc(SpcSkR1 spcSkR1, SpcTllvIndex tllvContainer, ContentKey ck) {
         CkcDataIv ckcDataIv = CkcDataIv.generate();
 
         CkcSecurityContext ckcSecurityContext = new CkcSecurityContext(
@@ -58,7 +55,7 @@ public class DefaultKsmTemplate implements KsmTemplate {
         CkcPayload ckcPayload = new CkcPayload(
                 ckcDataIv,
                 ckcSecurityContext.encryptCk(
-                        new ContentKey(), // TODO: CK must be located before
+                        ck,
                         spcSkR1
                 ),
                 new CkcR1(spcSkR1.getR1()),
@@ -68,11 +65,6 @@ public class DefaultKsmTemplate implements KsmTemplate {
 
         CkcEncryptedPayload ckcEncryptedPayload = ckcSecurityContext.encryptCkcPayload(ckcPayload, ckcDataIv);
 
-        CkcMessage ckcMessage = new CkcMessage(ckcDataIv, ckcEncryptedPayload);
-
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CkcMessageSerializer(ckcMessage).serializeTo(out);
-
-        return out.toByteArray();
+        return new Ckc(ckcDataIv, ckcEncryptedPayload);
     }
 }

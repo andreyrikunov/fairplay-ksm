@@ -5,7 +5,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import ru.devinside.drm.fairplay.ksm.ckc.CkcDataIv;
 import ru.devinside.drm.fairplay.ksm.ckc.CkcEncryptedPayload;
-import ru.devinside.drm.fairplay.ksm.ckc.CkcMessage;
+import ru.devinside.drm.fairplay.ksm.ckc.Ckc;
 import ru.devinside.drm.fairplay.ksm.ckc.CkcMessageSerializer;
 
 import java.io.ByteArrayOutputStream;
@@ -15,6 +15,7 @@ import java.util.Collection;
 
 import static org.junit.Assert.assertTrue;
 
+//TODO: cleanup
 @RunWith(Parameterized.class)
 public class CkcVerificationTest {
     private VerificationData verificationData;
@@ -27,17 +28,17 @@ public class CkcVerificationTest {
     public static Collection<VerificationData> params() {
         return Arrays.asList(
                 new VerificationData(
-                        SpcVerificationTest.class.getResource("/verification/fps/spc1.bin").getFile(),
+                        SpcVerificationTest.class.getResource("/sdk-2.0.3/verification/FPS/spc1.bin").getFile(),
                         "AFB46E7BF5F31596C1C676DC15E14DC6",
                         "4F45D85CE26273101A97F33081C1D04A"
                 ),
                 new VerificationData(
-                        SpcVerificationTest.class.getResource("/verification/fps/spc2.bin").getFile(),
+                        SpcVerificationTest.class.getResource("/sdk-2.0.3/verification/FPS/spc2.bin").getFile(),
                         "A663FF9AA82C5915F24D652489FEBDDE",
                         "AAAABBBBCCCC8230E89ACEFADDDDAAAA"
                 ),
                 new VerificationData(
-                        SpcVerificationTest.class.getResource("/verification/fps/spc3.bin").getFile(),
+                        SpcVerificationTest.class.getResource("/sdk-2.0.3/verification/FPS/spc3.bin").getFile(),
                         "076FE16CCC49DE38312476FD5BDF3FFB",
                         "32C082C9E26273101A97F33081C1D04A"
                 )
@@ -63,9 +64,9 @@ public class CkcVerificationTest {
     @Test
     public void verification() throws IOException {
         CkcDataIv ckcDataIv = CkcDataIv.generate();
-        CkcMessage ckcMessage = new CkcMessage(ckcDataIv, new CkcEncryptedPayload(new byte[0]));
+        Ckc ckc = new Ckc(ckcDataIv, new CkcEncryptedPayload(new byte[0]));
 
-        CkcMessageSerializer ckcMessageSerializer = new CkcMessageSerializer(ckcMessage);
+        CkcMessageSerializer ckcMessageSerializer = new CkcMessageSerializer(ckc);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ckcMessageSerializer.serializeTo(out);

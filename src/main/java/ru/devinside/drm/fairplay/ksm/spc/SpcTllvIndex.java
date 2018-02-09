@@ -7,10 +7,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Holds all SPC TLLV message blocks.
- * TODO: Each tag must be present exactly once
+ * Holds all SPC TLLV blocks indexed by tag
+ *
+ * TODO: Each tag must be present once only.
  */
-public class SpcTllvContainer {
+public class SpcTllvIndex {
     private final Map<Long, TllvBlock> tllvRawByTag = new HashMap<>();
 
     public void add(TllvBlock tllvRaw) {

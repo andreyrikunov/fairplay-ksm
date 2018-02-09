@@ -11,6 +11,7 @@ public class TllvBlockSerializer {
         this.tllvBlock = tllvBlock;
     }
 
+    // TODO: replace with ByteBuffer
     public byte[] serialize() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         out.write(ByteBuffer.allocate(8).putLong(tllvBlock.getTag()).array());

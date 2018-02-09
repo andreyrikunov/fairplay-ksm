@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 /**
  * SPC encrypted payload.
  */
+@Deprecated
 public class SpcPayloadRaw {
     private final byte[] payload;
 

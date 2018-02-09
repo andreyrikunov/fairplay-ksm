@@ -1,6 +1,6 @@
 package ru.devinside.drm.fairplay.ksm.spc;
 
-import ru.devinside.drm.fairplay.ksm.secret.ApplicationSecretKey;
+import ru.devinside.drm.fairplay.ksm.common.BinVal;
 import ru.devinside.drm.fairplay.ksm.secret.DFunction;
 import ru.devinside.drm.fairplay.ksm.spc.tags.SkR1Integrity;
 import ru.devinside.drm.fairplay.ksm.spc.tags.SpcR2;
@@ -16,42 +16,43 @@ import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Arrays;
 
-public class SpcSecurityContext {
+public class SpcSecurityService {
+    private final DFunction dFunction;
     private final byte[] appCertificatePrivateKey;
 
-    public SpcSecurityContext(byte[] appCertificatePrivateKey) {
+    public SpcSecurityService(DFunction dFunction, byte[] appCertificatePrivateKey) {
+        this.dFunction = dFunction;
         this.appCertificatePrivateKey = appCertificatePrivateKey;
     }
 
-    public Spck decryptSpck(SpckRaw spckRaw) {
+    public SpcKey decryptSpcKey(BinVal encryptedSpcKey) {
         try {
             Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPPadding");
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             KeySpec keySpec = new PKCS8EncodedKeySpec(appCertificatePrivateKey);
             PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
             rsaCipher.init(Cipher.DECRYPT_MODE, privateKey);
-            return new Spck(rsaCipher.doFinal(spckRaw.getSpckEncrypted()));
+            return new SpcKey(rsaCipher.doFinal(encryptedSpcKey.getBytes()));
         } catch (NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException |
                 IllegalBlockSizeException | InvalidKeyException | InvalidKeySpecException e ) {
             throw new SpcSecurityException(e);
         }
     }
 
-    public SpcPayload decryptPayload(SpcPayloadRaw payloadRaw, Spck spck, SpcDataIv iv) {
-        SecretKey secretKeyKey = new SecretKeySpec(spck.getSpck(), "AES");
+    public SpcPayload decryptPayload(Spc spc, SpcKey spcKey) {
+        SecretKey secretKeyKey = new SecretKeySpec(spcKey.getSpck(), "AES");
         try {
             Cipher cipher = Cipher.getInstance("AES/CBC/NOPADDING");
-            cipher.init(Cipher.DECRYPT_MODE, secretKeyKey, new IvParameterSpec(iv.getIv()));
-            return new SpcPayload(cipher.doFinal(payloadRaw.getPayload()));
+            cipher.init(Cipher.DECRYPT_MODE, secretKeyKey, new IvParameterSpec(spc.getSpcDataIv().getBytes()));
+            return new SpcPayload(cipher.doFinal(spc.getEncryptedPayload().getBytes()));
         } catch (NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException |
                 IllegalBlockSizeException | InvalidKeyException | InvalidAlgorithmParameterException e ) {
             throw new SpcSecurityException(e);
         }
     }
 
-    public SpcSkR1 decryptSkR1(SpcSkR1Raw spcSkR1Raw, SpcR2 r2, ApplicationSecretKey ask) {
-        DFunction dFunction = new DFunction();
-        DerivedApplicationSecretKey derivedApplicationSecretKey = dFunction.compute(r2, ask);
+    public SpcSkR1 decryptSkR1(SpcSkR1Raw spcSkR1Raw, SpcR2 r2) {
+        DerivedApplicationSecretKey derivedApplicationSecretKey = dFunction.derive(r2);
 
         SecretKey secretKeyKey = new SecretKeySpec(derivedApplicationSecretKey.getKey(), "AES");
         try {

@@ -1,8 +1,14 @@
 package ru.devinside.drm.fairplay.ksm.common;
 
+import ru.devinside.drm.fairplay.ksm.spc.SpcTag;
+import ru.devinside.util.Hexler;
+
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
+/**
+ * Tag-length-length-value block
+ */
 public class TllvBlock {
     // A sequence of bytes that is unique within an SPC/CKC
     private final long tag;
@@ -56,5 +62,16 @@ public class TllvBlock {
 
     public byte[] getPadding() {
         return padding;
+    }
+
+    @Override
+    public String toString() {
+        return "TllvBlock{" +
+                "tag=" + Long.toHexString(tag) + " " + SpcTag.valueOf(tag) +
+                ", value=" + Hexler.toHexString(value) +
+                ", valueLength=" + value.length +
+                ", totalBlockLength=" + totalBlockLength +
+                ", paddingLength=" + padding.length +
+                '}';
     }
 }

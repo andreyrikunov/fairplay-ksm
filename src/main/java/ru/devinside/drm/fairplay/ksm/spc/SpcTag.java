@@ -50,6 +50,8 @@ public enum SpcTag {
     // Media playback information for rental and lease.
     MEDIA_PLAYBACK_STATE(0xeb8efdf2b25ab3a0L),
 
+    // An SPC message may contain reserved TLLV blocks with tag values not specified here - such blocks should be
+    // ignored by KSM.
     UNIDENTIFIED_TAG(0);
 
     private final long tag;

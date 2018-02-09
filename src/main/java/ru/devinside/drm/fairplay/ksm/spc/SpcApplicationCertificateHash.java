@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
  * The SHA-1 hash value of the encrypted Application Certificate,
  * which identifies the private key of the developer that generated the SPC.
  */
+@Deprecated
 public class SpcApplicationCertificateHash {
     public final static int SPC_APP_CERTIFICATE_HASH_SIZE = 20;
 

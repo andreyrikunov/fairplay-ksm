@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
  * SPC data initialization vector.
  * A CBC initialization vector that has a unique value for each SPC message.
  */
+@Deprecated
 public class SpcDataIv {
     public final static int SPC_DATA_IV_SIZE = 16;
 
