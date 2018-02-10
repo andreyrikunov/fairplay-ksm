@@ -31,7 +31,7 @@ public class CkcPayloadSerializer {
         out.write(ByteBuffer.allocate(8).putLong(CkcTag.ENCRYPTED_CK.getTag()).array());
         out.write(ByteBuffer.allocate(4).putInt(48).array()); // Block length: Value(32) + Padding(16)
         out.write(ByteBuffer.allocate(4).putInt(32).array()); // Value length: IV(16) + CK(16)
-        out.write(ckcPayload.getCkcDataIv().getIv());
+        out.write(ckcPayload.getContentKeyIv().getIv());
         out.write(ckcPayload.getEncryptedCk().getEncryptedCk());
         try {
             out.write(SecureRandom.getInstanceStrong().generateSeed(16));

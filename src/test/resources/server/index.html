@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FPS Demo</title>
+    <script>
+        var keySystem;
+        var certificate;
+        var serverCertificatePath = 'cert';
+        var serverProcessSPCPath  = 'ksm';
+
+        function stringToArray(string) {
+            var buffer = new ArrayBuffer(string.length*2); // 2 bytes for each char
+            var array = new Uint16Array(buffer);
+            for (var i=0, strLen=string.length; i<strLen; i++) {
+                array[i] = string.charCodeAt(i);
+            }
+            return array;
+        }
+
+        function arrayToString(array) {
+            var uint16array = new Uint16Array(array.buffer);
+            return String.fromCharCode.apply(null, uint16array);
+        }
+
+        function base64DecodeUint8Array(input) {
+            var raw = window.atob(input);
+            var rawLength = raw.length;
+            var array = new Uint8Array(new ArrayBuffer(rawLength));
+
+            for(i = 0; i < rawLength; i++)
+                array[i] = raw.charCodeAt(i);
+
+            return array;
+        }
+
+        function base64EncodeUint8Array(input) {
+            var keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+            var output = "";
+            var chr1, chr2, chr3, enc1, enc2, enc3, enc4;
+            var i = 0;
+
+            while (i < input.length) {
+                chr1 = input[i++];
+                chr2 = i < input.length ? input[i++] : Number.NaN; // Not sure if the index
+                chr3 = i < input.length ? input[i++] : Number.NaN; // checks are needed here
+
+                enc1 = chr1 >> 2;
+                enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
+                enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
+                enc4 = chr3 & 63;
+
+                if (isNaN(chr2)) {
+                    enc3 = enc4 = 64;
+                } else if (isNaN(chr3)) {
+                    enc4 = 64;
+                }
+                output += keyStr.charAt(enc1) + keyStr.charAt(enc2) +
+                    keyStr.charAt(enc3) + keyStr.charAt(enc4);
+            }
+            return output;
+        }
+
+        function waitForEvent(name, action, target) {
+            target.addEventListener(name, function() {
+                action(arguments[0]);
+            }, false);
+        }
+
+        function loadCertificate()
+        {
+            var request = new XMLHttpRequest();
+            request.responseType = 'arraybuffer';
+            request.addEventListener('load', onCertificateLoaded, false);
+            request.addEventListener('error', onCertificateError, false);
+            request.open('GET', serverCertificatePath, true);
+            request.setRequestHeader('Pragma', 'Cache-Control: no-cache');
+            request.setRequestHeader("Cache-Control", "max-age=0");
+            request.send();
+        }
+
+        function onCertificateLoaded(event) {
+            var request = event.target;
+            certificate = new Uint8Array(request.response);
+            startVideo();
+        }
+
+        function onCertificateError(event) {
+            window.console.error('Failed to retrieve the server certificate.')
+        }
+
+        function extractContentId(initData) {
+            contentId = arrayToString(initData);
+            // contentId is passed up as a URI, from which the host must be extracted:
+            var link = document.createElement('a');
+            link.href = contentId;
+            return link.hostname;
+        }
+
+        function concatInitDataIdAndCertificate(initData, id, cert) {
+            if (typeof id == "string")
+                id = stringToArray(id);
+            // layout is [initData][4 byte: idLength][idLength byte: id][4 byte:certLength][certLength byte: cert]
+            var offset = 0;
+            var buffer = new ArrayBuffer(initData.byteLength + 4 + id.byteLength + 4 + cert.byteLength);
+            var dataView = new DataView(buffer);
+
+            var initDataArray = new Uint8Array(buffer, offset, initData.byteLength);
+            initDataArray.set(initData);
+            offset += initData.byteLength;
+
+            dataView.setUint32(offset, id.byteLength, true);
+            offset += 4;
+
+            var idArray = new Uint16Array(buffer, offset, id.length);
+            idArray.set(id);
+            offset += idArray.byteLength;
+
+            dataView.setUint32(offset, cert.byteLength, true);
+            offset += 4;
+
+            var certArray = new Uint8Array(buffer, offset, cert.byteLength);
+            certArray.set(cert);
+
+            return new Uint8Array(buffer, 0, buffer.byteLength);
+        }
+
+        function selectKeySystem()
+        {
+            if (WebKitMediaKeys.isTypeSupported("com.apple.fps.1_0", "video/mp4"))
+            {
+                keySystem = "com.apple.fps.1_0";
+            }
+            else
+            {
+                throw "Key System not supported";
+            }
+        }
+
+        function startVideo()
+        {
+            var video = document.getElementsByTagName('video')[0];
+            video.addEventListener('webkitneedkey', onneedkey, false);
+            video.addEventListener('error', onerror, false);
+            video.src = 'sample/enc/big_buck_bunny/m3u8/big_buck_bunny_fps.m3u8';
+        }
+
+        function onerror(event) {
+            window.console.error('A video playback error occurred')
+        }
+
+        function onneedkey(event)
+        {
+            var video = event.target;
+            var initData = event.initData;
+            var contentId = extractContentId(initData);
+            initData = concatInitDataIdAndCertificate(initData, contentId, certificate);
+
+            if (!video.webkitKeys)
+            {
+                selectKeySystem();
+                video.webkitSetMediaKeys(new WebKitMediaKeys(keySystem));
+            }
+
+            if (!video.webkitKeys)
+                throw "Could not create MediaKeys";
+
+            var keySession = video.webkitKeys.createSession("video/mp4", initData);
+            if (!keySession)
+                throw "Could not create key session";
+
+            keySession.contentId = contentId;
+            waitForEvent('webkitkeymessage', licenseRequestReady, keySession);
+            waitForEvent('webkitkeyadded', onkeyadded, keySession);
+            waitForEvent('webkitkeyerror', onkeyerror, keySession);
+        }
+
+        function licenseRequestReady(event)
+        {
+            var session = event.target;
+            var message = event.message;
+            var request = new XMLHttpRequest();
+            var sessionId = event.sessionId;
+            request.responseType = 'text';
+            request.session = session;
+            request.addEventListener('load', licenseRequestLoaded, false);
+            request.addEventListener('error', licenseRequestFailed, false);
+
+            var spc = base64EncodeUint8Array(message);
+            window.console.info('SPC=' + spc);
+
+            var assetId = encodeURIComponent(session.contentId);
+            window.console.info('ASSET_ID=' + assetId);
+
+            var params = 'spc='+spc+'&assetId='+assetId;
+            request.open('POST', serverProcessSPCPath, true);
+            // request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+
+            // request.send(params);
+            request.send(message);
+        }
+
+        function licenseRequestLoaded(event)
+        {
+            var request = event.target;
+            var session = request.session;
+            keyText = request.responseText.trim();
+            window.console.info('CKC=' + keyText);
+            if (keyText.substr(0, 5) === '<ckc>' && keyText.substr(-6) === '</ckc>')
+                keyText = keyText.slice(5,-6);
+            key = base64DecodeUint8Array(keyText);
+            session.update(key);
+        }
+
+        function licenseRequestFailed(event)
+        {
+            window.console.error('The license request failed.');
+        }
+
+        function onkeyerror(event) {
+            window.console.error('A decryption key error was encountered');
+        }
+
+        function onkeyadded(event) {
+            window.console.log('Decryption key was added to session.');
+        }
+
+    </script>
+</head>
+<body onload="loadCertificate()">
+<video controls autoplay preload="auto" width=960></video>
+<div><a href="sample/clear/big_buck_bunny/m3u8/index.html">Big Buck Bunny</a></div>
+<div><a href="sample/enc/big_buck_bunny/m3u8/index.html">[Big Buck Bunny] (clear key)</a></div>
+</body>
+</html>
+
+

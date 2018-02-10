@@ -9,9 +9,9 @@ import java.util.Collection;
  * The CKC payload is AES-128 encrypted.
  */
 public class CkcPayload {
-    private final CkcDataIv ckcDataIv;
-
     private final CkcEncryptedCk encryptedCk;
+
+    private final ContentKeyIv contentKeyIv;
 
     private final CkcR1 r1;
 
@@ -20,20 +20,28 @@ public class CkcPayload {
     // The CKC must return, unchanged, the TLLV blocks that the SPC requested in a tag return request.
     private Collection<TllvBlock> returnRequestBlocks;
 
-    public CkcPayload(CkcDataIv ckcDataIv, CkcEncryptedCk encryptedCk, CkcR1 r1, CkcContentKeyDuration ckcContentKeyDuration, Collection<TllvBlock> returnRequestBlocks) {
-        this.ckcDataIv = ckcDataIv;
+    // TODO: add HDCP enforcement
+
+    public CkcPayload(
+            CkcEncryptedCk encryptedCk,
+            ContentKeyIv contentKeyIv,
+            CkcR1 r1,
+            CkcContentKeyDuration ckcContentKeyDuration,
+            Collection<TllvBlock> returnRequestBlocks
+    ) {
         this.encryptedCk = encryptedCk;
+        this.contentKeyIv = contentKeyIv;
         this.r1 = r1;
         this.ckcContentKeyDuration = ckcContentKeyDuration;
         this.returnRequestBlocks = returnRequestBlocks;
     }
 
-    public CkcDataIv getCkcDataIv() {
-        return ckcDataIv;
-    }
-
     public CkcEncryptedCk getEncryptedCk() {
         return encryptedCk;
+    }
+
+    public ContentKeyIv getContentKeyIv() {
+        return contentKeyIv;
     }
 
     public CkcR1 getR1() {

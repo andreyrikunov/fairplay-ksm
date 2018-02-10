@@ -8,5 +8,6 @@ import ru.devinside.drm.fairplay.ksm.spc.Spc;
 import java.util.function.Function;
 
 public interface KsmTemplate {
+    // TODO: validate assetId - add callback?
     Ckc process(Spc spc, Function<AssetId, ContentKey> keyFunction);
 }

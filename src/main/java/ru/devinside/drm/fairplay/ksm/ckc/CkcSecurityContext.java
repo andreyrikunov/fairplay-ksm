@@ -45,7 +45,7 @@ public class CkcSecurityContext {
     public CkcEncryptedCk encryptCk(ContentKey ck, SpcSkR1 spcSkR1) {
         SecretKey secretKeyKey = new SecretKeySpec(spcSkR1.getSessionKey(), "AES");
         try {
-            Cipher cipher = Cipher.getInstance("AES/CBC/NOPADDING");
+            Cipher cipher = Cipher.getInstance("AES/ECB/NOPADDING");
             cipher.init(Cipher.ENCRYPT_MODE, secretKeyKey);
             return new CkcEncryptedCk(cipher.doFinal(ck.getKey()));
         } catch (NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException |

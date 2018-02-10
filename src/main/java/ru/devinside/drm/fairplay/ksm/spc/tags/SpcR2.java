@@ -11,6 +11,10 @@ import java.nio.ByteBuffer;
 public class SpcR2 {
     private final byte[] r2;
 
+    public SpcR2(byte[] r2) {
+        this.r2 = r2;
+    }
+
     public SpcR2(TllvBlock spcR2Tag) {
         if(SpcTag.R2 != SpcTag.valueOf(spcR2Tag.getTag())) {
             throw new IllegalArgumentException("TLLV Block is not R2");

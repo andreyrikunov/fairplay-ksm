@@ -25,6 +25,11 @@ public class DefaultKsmTemplate implements KsmTemplate {
 
         SpcTllvIndex tllvContainer = new SpcPayloadReader(payload).index();
 
+        TllvBlock protocolVersionSupported = tllvContainer.find(SpcTag.PROTOCOL_VERSIONS_SUPPORTED);
+        TllvBlock protocolVersionUsed = tllvContainer.find(SpcTag.PROTOCOL_VERSION_USED);
+
+        // TODO: check versioning/compatibility of device and ksm
+
         TllvBlock tllvSkR1 = tllvContainer.find(SpcTag.SK_R1);
         SpcSkR1Raw spcSkR1Raw = new SpcSkR1Raw(tllvSkR1);
 
@@ -45,24 +50,23 @@ public class DefaultKsmTemplate implements KsmTemplate {
     }
 
     private Ckc generateCkc(SpcSkR1 spcSkR1, SpcTllvIndex tllvContainer, ContentKey ck) {
-        CkcDataIv ckcDataIv = CkcDataIv.generate();
-
         CkcSecurityContext ckcSecurityContext = new CkcSecurityContext(
                 spcSkR1,
                 new SpcArSeed(tllvContainer.find(SpcTag.AR_SEED))
         );
 
         CkcPayload ckcPayload = new CkcPayload(
-                ckcDataIv,
                 ckcSecurityContext.encryptCk(
                         ck,
                         spcSkR1
                 ),
+                new ContentKeyIv(ck.getIv()),
                 new CkcR1(spcSkR1.getR1()),
                 new CkcContentKeyDuration(),
                 tllvContainer.findReturnRequestBlocks()
         );
 
+        CkcDataIv ckcDataIv = CkcDataIv.generate();
         CkcEncryptedPayload ckcEncryptedPayload = ckcSecurityContext.encryptCkcPayload(ckcPayload, ckcDataIv);
 
         return new Ckc(ckcDataIv, ckcEncryptedPayload);

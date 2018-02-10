@@ -15,4 +15,9 @@ public class RandomContentKey implements ContentKey {
         }
         return ck;
     }
+
+    @Override
+    public byte[] getIv() {
+        return new byte[] {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    }
 }
