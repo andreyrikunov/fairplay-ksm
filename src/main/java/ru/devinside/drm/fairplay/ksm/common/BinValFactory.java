@@ -1,5 +1,7 @@
 package ru.devinside.drm.fairplay.ksm.common;
 
+import ru.devinside.drm.fairplay.ksm.spc.BadSpcException;
+
 import java.nio.ByteBuffer;
 
 public class BinValFactory {
@@ -13,8 +15,12 @@ public class BinValFactory {
         int length = buffer.getInt();
 
         if(length % padding.getPaddingBytesNum() != 0) {
-            throw new IllegalArgumentException(
-                    String.format("The number of bytes must be a multiple of %s", padding.getPaddingBytesNum())
+            throw new BadSpcException(
+                    String.format(
+                            "The number of bytes must be a multiple of %s but %s found",
+                            padding.getPaddingBytesNum(),
+                            length
+                    )
             );
         }
 

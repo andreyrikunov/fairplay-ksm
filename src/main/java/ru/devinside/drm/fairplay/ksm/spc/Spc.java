@@ -26,6 +26,16 @@ public class Spc {
         this.encryptedPayload = encryptedPayload;
     }
 
+    public int getSize() {
+        return Integer.BYTES +
+                Integer.BYTES  +
+                spcDataIv.length() +
+                encryptedSpcKey.length() +
+                certificateHash.length() +
+                Integer.BYTES +
+                encryptedPayload.length();
+    }
+
     public int getVersion() {
         return version;
     }

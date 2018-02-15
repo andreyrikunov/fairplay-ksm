@@ -16,13 +16,18 @@ public class CkcPayloadSerializer {
         this.ckcPayload = ckcPayload;
     }
 
-    public byte[] serialize() throws IOException {
+    public byte[] serialize() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-        serializeContentKeyTllv(out);
-        serializeR1Tllv(out);
-        serializeContenKeyDurationTllv(out);
-        serializeReturnRequesTllvs(out);
+        try {
+            serializeContentKeyTllv(out);
+            serializeR1Tllv(out);
+            serializeContenKeyDurationTllv(out);
+            serializeReturnRequesTllvs(out);
+        } catch (IOException e) {
+            // TODO: use ByteBuffer or use specific exception
+            throw new RuntimeException(e);
+        }
 
         return out.toByteArray();
     }

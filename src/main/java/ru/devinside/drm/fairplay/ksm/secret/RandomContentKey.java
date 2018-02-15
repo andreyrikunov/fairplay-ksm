@@ -1,23 +1,20 @@
 package ru.devinside.drm.fairplay.ksm.secret;
 
-import ru.devinside.drm.fairplay.ksm.ckc.CkcSecurityException;
+import ru.devinside.drm.fairplay.ksm.ckc.ContentKeyIv;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
+import java.util.Random;
 
 public class RandomContentKey implements ContentKey {
     public byte[] getKey() {
-        byte[] ck = new byte[16];
-        try {
-            SecureRandom.getInstanceStrong().nextBytes(ck);
-        } catch (NoSuchAlgorithmException e) {
-            throw new CkcSecurityException(e);
-        }
+        byte[] ck = new byte[ContentKey.CONTENT_KEY_SIZE];
+        new Random().nextBytes(ck);
         return ck;
     }
 
     @Override
     public byte[] getIv() {
-        return new byte[] {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+        byte[] iv = new byte[ContentKeyIv.CONTENT_KEY_DATA_IV_SIZE];
+        new Random().nextBytes(iv);
+        return iv;
     }
 }

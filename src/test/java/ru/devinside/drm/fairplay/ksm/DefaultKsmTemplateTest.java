@@ -60,7 +60,11 @@ public class DefaultKsmTemplateTest {
 
         SpcParser spcParser = new SpcParser();
         Spc spc = spcParser.parse(readResourceBytes(spcPath));
-        byte[] ckc = ksmTemplate.process(spc, assetId -> new RandomContentKey()).getBytes();
+        byte[] ckc = ksmTemplate.process(
+                spc,
+                assetId -> new RandomContentKey(),
+                clientServerProtocolCompatibility -> {}
+        ).getBytes();
 
         assertTrue(ckc.length > 0);
 

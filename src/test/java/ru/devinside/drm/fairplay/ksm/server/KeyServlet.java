@@ -71,12 +71,13 @@ public class KeyServlet extends HttpServlet {
         Spc spc = spcParser.parse(IOUtils.toByteArray(req.getInputStream()));
 
         // TODO: validate
+        // spc max size
         // validate certificate hash
-        // validate assetId in request vs assetId in SPC
 
         byte[] ckc = ksmTemplate.process(
                 spc,
-                assetId -> STATIC_CONTENT_KEY
+                assetId -> STATIC_CONTENT_KEY,
+                clientServerProtocolCompatibility -> {}
         ).getBytes();
 
         Writer writer = resp.getWriter();

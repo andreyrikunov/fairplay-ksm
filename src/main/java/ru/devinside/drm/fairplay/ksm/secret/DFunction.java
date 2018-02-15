@@ -1,13 +1,8 @@
 package ru.devinside.drm.fairplay.ksm.secret;
 
 import ru.devinside.drm.fairplay.ksm.spc.DerivedApplicationSecretKey;
-import ru.devinside.drm.fairplay.ksm.spc.SpcSecurityException;
 import ru.devinside.drm.fairplay.ksm.spc.tags.SpcR2;
-
-import javax.crypto.*;
-import javax.crypto.spec.SecretKeySpec;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
+import ru.devinside.util.CryptoUtils;
 
 /**
  * The Derivation Function for Derived Application Secret key (DASk) computation
@@ -27,22 +22,10 @@ public class DFunction {
 
     public DerivedApplicationSecretKey derive(SpcR2 spcR2) {
         return new DerivedApplicationSecretKey(
-                encrypt(
-                    computeHash(spcR2.getR2()),
-                    ask
+                CryptoUtils.encryptWithAesEcbNoPadding(
+                        CryptoUtils.aesKey(ask.getBytes()),
+                        computeHash(spcR2.getR2())
                 )
         );
-    }
-
-    private byte[] encrypt(byte[] hash16, ApplicationSecretKey ask) {
-        SecretKey secretKeyKey = new SecretKeySpec(ask.getBytes(), "AES");
-        try {
-            Cipher cipher = Cipher.getInstance("AES/ECB/NOPADDING");
-            cipher.init(Cipher.ENCRYPT_MODE, secretKeyKey);
-            return cipher.doFinal(hash16);
-        } catch (NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException |
-                IllegalBlockSizeException | InvalidKeyException e ) {
-            throw new SpcSecurityException(e);
-        }
     }
 }

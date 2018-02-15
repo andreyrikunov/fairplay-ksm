@@ -5,15 +5,9 @@ import ru.devinside.drm.fairplay.ksm.secret.DFunction;
 import ru.devinside.drm.fairplay.ksm.spc.tags.SkR1Integrity;
 import ru.devinside.drm.fairplay.ksm.spc.tags.SpcR2;
 import ru.devinside.drm.fairplay.ksm.spc.tags.SpcSkR1;
+import ru.devinside.util.CryptoUtils;
 
-import javax.crypto.*;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-
-import java.security.*;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
-import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.Key;
 import java.util.Arrays;
 
 public class SpcSecurityService {
@@ -27,41 +21,41 @@ public class SpcSecurityService {
 
     public SpcKey decryptSpcKey(BinVal encryptedSpcKey) {
         try {
-            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPPadding");
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            KeySpec keySpec = new PKCS8EncodedKeySpec(appCertificatePrivateKey);
-            PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
-            rsaCipher.init(Cipher.DECRYPT_MODE, privateKey);
-            return new SpcKey(rsaCipher.doFinal(encryptedSpcKey.getBytes()));
-        } catch (NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException |
-                IllegalBlockSizeException | InvalidKeyException | InvalidKeySpecException e ) {
-            throw new SpcSecurityException(e);
+            Key key = CryptoUtils.rsaPrivateKey(appCertificatePrivateKey);
+            return new SpcKey(CryptoUtils.decryptWithRsaEcbOaepPadding(key, encryptedSpcKey.getBytes()));
+        } catch (DecryptionException e) {
+            throw new SpcSecurityException("Unable to decrypt SPC encryption key", e);
         }
     }
 
     public SpcPayload decryptPayload(Spc spc, SpcKey spcKey) {
-        SecretKey secretKeyKey = new SecretKeySpec(spcKey.getSpck(), "AES");
         try {
-            Cipher cipher = Cipher.getInstance("AES/CBC/NOPADDING");
-            cipher.init(Cipher.DECRYPT_MODE, secretKeyKey, new IvParameterSpec(spc.getSpcDataIv().getBytes()));
-            return new SpcPayload(cipher.doFinal(spc.getEncryptedPayload().getBytes()));
-        } catch (NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException |
-                IllegalBlockSizeException | InvalidKeyException | InvalidAlgorithmParameterException e ) {
-            throw new SpcSecurityException(e);
+            return new SpcPayload(
+                    CryptoUtils.decryptWithAesCbcNoPadding(
+                            CryptoUtils.aesKey(spcKey.getSpck()),
+                            CryptoUtils.aesIv(spc.getSpcDataIv().getBytes()),
+                            spc.getEncryptedPayload().getBytes()
+                    )
+            );
+        } catch (DecryptionException e) {
+            throw new SpcSecurityException("Unable to decrypt SPC payload", e);
         }
     }
 
     public SpcSkR1 decryptSkR1(SpcSkR1Raw spcSkR1Raw, SpcR2 r2) {
-        DerivedApplicationSecretKey derivedApplicationSecretKey = dFunction.derive(r2);
-
-        SecretKey secretKeyKey = new SecretKeySpec(derivedApplicationSecretKey.getKey(), "AES");
         try {
-            Cipher cipher = Cipher.getInstance("AES/CBC/NOPADDING");
-            cipher.init(Cipher.DECRYPT_MODE, secretKeyKey, new IvParameterSpec(spcSkR1Raw.getIv()));
-            return new SpcSkR1(cipher.doFinal(spcSkR1Raw.getPayload()));
-        } catch (NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException |
-                IllegalBlockSizeException | InvalidKeyException | InvalidAlgorithmParameterException e ) {
-            throw new SpcSecurityException(e);
+            DerivedApplicationSecretKey derivedApplicationSecretKey = dFunction.derive(r2);
+            return new SpcSkR1(
+                    CryptoUtils.decryptWithAesCbcNoPadding(
+                            CryptoUtils.aesKey(derivedApplicationSecretKey.getKey()),
+                            CryptoUtils.aesIv(spcSkR1Raw.getIv()),
+                            spcSkR1Raw.getPayload()
+                    )
+            );
+        } catch (EncryptionException e) {
+            throw new SpcSecurityException("Unable to derive application key", e);
+        } catch (DecryptionException e) {
+            throw new SpcSecurityException("Unable to decrypt [SK..R1]", e);
         }
     }
 
