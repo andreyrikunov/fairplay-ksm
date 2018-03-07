@@ -11,22 +11,38 @@ public class ClientServerProtocolCompatibilityChecker {
             int clientUsed,
             Collection<Integer> clientSupported
     ) {
-        return new ClientServerProtocolCompatibility() {
-            @Override
-            public boolean isCompatible() {
-                return serverProtocolVersion.contains(clientUsed);
-            }
+        return new ClientServerProtocolCompatibilityImpl(serverProtocolVersion, clientUsed, clientSupported);
+    }
 
-            @Override
-            public boolean isServerProtocolUpToDate() {
-                return Collections.max(clientSupported) <= Collections.max(serverProtocolVersion);
-            }
+    private static class ClientServerProtocolCompatibilityImpl implements ClientServerProtocolCompatibility {
+        private final Collection<Integer> serverProtocolVersion;
+        private final int clientUsed;
+        private final Collection<Integer> clientSupported;
 
-            @Override
-            public boolean isSuspiciousVersionUsed() {
-                return clientUsed != Collections.max(clientSupported) &&
-                        clientUsed != Collections.max(serverProtocolVersion);
-            }
-        };
+        ClientServerProtocolCompatibilityImpl(
+                Collection<Integer> serverProtocolVersion,
+                int clientUsed,
+                Collection<Integer> clientSupported
+        ) {
+            this.serverProtocolVersion = serverProtocolVersion;
+            this.clientUsed = clientUsed;
+            this.clientSupported = clientSupported;
+        }
+
+        @Override
+        public boolean isCompatible() {
+            return serverProtocolVersion.contains(clientUsed);
+        }
+
+        @Override
+        public boolean isServerProtocolUpToDate() {
+            return Collections.max(clientSupported) <= Collections.max(serverProtocolVersion);
+        }
+
+        @Override
+        public boolean isSuspiciousVersionUsed() {
+            return clientUsed != Collections.max(clientSupported) &&
+                    clientUsed != Collections.max(serverProtocolVersion);
+        }
     }
 }

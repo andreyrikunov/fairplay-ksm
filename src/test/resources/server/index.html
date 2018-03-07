@@ -66,6 +66,10 @@
             }, false);
         }
 
+        function start() {
+            loadCertificate();
+        }
+
         function loadCertificate()
         {
             var request = new XMLHttpRequest();
@@ -141,7 +145,7 @@
             var video = document.getElementsByTagName('video')[0];
             video.addEventListener('webkitneedkey', onneedkey, false);
             video.addEventListener('error', onerror, false);
-            video.src = 'sample/enc/big_buck_bunny/m3u8/big_buck_bunny_fps.m3u8';
+            video.src = document.getElementById('video_stream').value;
         }
 
         function onerror(event) {
@@ -226,8 +230,11 @@
 
     </script>
 </head>
-<body onload="loadCertificate()">
+<body onload="start()">
 <video controls autoplay preload="auto" width=960></video>
+<div>Stream URL: <input type="text" id="video_stream" size="100" value="sample/enc/big_buck_bunny/m3u8/big_buck_bunny_fps.m3u8">
+    <button onclick="start()">Reload</button>
+</div>
 <div><a href="sample/clear/big_buck_bunny/m3u8/index.html">Big Buck Bunny</a></div>
 <div><a href="sample/enc/big_buck_bunny/m3u8/index.html">[Big Buck Bunny] (clear key)</a></div>
 </body>

@@ -16,6 +16,9 @@ public enum CkcTag {
     // This TLLV may be present only if the KSM has received an SPC with a Media Playback State TLLV.
     CONTENT_KEY_DURATION(0x47acf6a418cd091aL),
 
+    // An optional TLLV that specifies whether HDCP enforcement is required. The absence the TLLV enforces HDCP Type 0.
+    HDCP_ENFORCEMENT(0x2e52f1530d8ddb4aL),
+
     UNIDENTIFIED_TAG(0);
 
     private final long tag;

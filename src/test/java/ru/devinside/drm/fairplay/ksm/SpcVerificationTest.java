@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import ru.devinside.drm.fairplay.ksm.common.TllvBlock;
+import ru.devinside.drm.fairplay.ksm.secret.FpsCertificate;
 import ru.devinside.drm.fairplay.ksm.secret.StubDFunction;
 import ru.devinside.drm.fairplay.ksm.spc.*;
 import ru.devinside.drm.fairplay.ksm.spc.tags.SkR1Integrity;
@@ -20,12 +21,14 @@ import java.util.Collection;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static ru.devinside.drm.fairplay.ksm.TestUtils.readResourceBytes;
 
 //TODO: cleanup
 @RunWith(Parameterized.class)
 public class SpcVerificationTest {
-    private final static String DEV_PRIVATE_KEY_DER_FILE_PATH =
-            SpcVerificationTest.class.getResource("/sdk-2.0.3/credentials/dev_private_key.der").getFile();
+    private final static String FPS_CERT_FILE_PATH = "/sdk-4.1.0/credentials/dev_certificate.der";
+
+    private final static String DEV_PRIVATE_KEY_DER_FILE_PATH = "/sdk-2.0.3/credentials/dev_private_key.der";
 
     private VerificationData verificationData;
 
@@ -119,37 +122,37 @@ public class SpcVerificationTest {
         Spc spcMessage = spcParser.parse(spc);
 
         SpcSecurityService securityContext = new SpcSecurityService(
+                new FpsCertificate(readResourceBytes(FPS_CERT_FILE_PATH)),
                 new StubDFunction(),
-                Files.readAllBytes(Paths.get(DEV_PRIVATE_KEY_DER_FILE_PATH))
+                readResourceBytes(DEV_PRIVATE_KEY_DER_FILE_PATH)
         );
 
         SpcKey spcKey = securityContext.decryptSpcKey(spcMessage.getEncryptedSpcKey());
 
         SpcPayload payload = securityContext.decryptPayload(spcMessage, spcKey);
 
-        SpcPayloadReader payloadReader = new SpcPayloadReader(payload);
-        SpcTllvIndex tllvContainer = payloadReader.index();
+        TllvBlockIndex tllvBlockIndex = TllvBlockIndex.build(new SpcPayloadReader(payload));
 
-        TllvBlock tllvSkR1 = tllvContainer.find(SpcTag.SK_R1);
-        SpcSkR1Raw spcSkR1Raw = new SpcSkR1Raw(tllvSkR1);
+        TllvBlock tllvSkR1 = tllvBlockIndex.find(SpcTag.SK_R1);
+        SpcEncryptedSkR1 spcEncryptedSkR1 = new SpcEncryptedSkR1(tllvSkR1);
 
-        TllvBlock tllvR2 = tllvContainer.find(SpcTag.R2);
+        TllvBlock tllvR2 = tllvBlockIndex.find(SpcTag.R2);
         SpcR2 spcR2 = new SpcR2(tllvR2);
 
-        SpcSkR1 spcSkR1 = securityContext.decryptSkR1(spcSkR1Raw, spcR2);
+        SpcSkR1 spcSkR1 = securityContext.decryptSkR1(spcEncryptedSkR1, spcR2);
 
-        TllvBlock tllvSkR1Integrity = tllvContainer.find(SpcTag.SK_R1_INTEGRITY);
+        TllvBlock tllvSkR1Integrity = tllvBlockIndex.find(SpcTag.SK_R1_INTEGRITY);
 
         assertTrue(securityContext.integrityCheckSkR1(spcSkR1, new SkR1Integrity(tllvSkR1Integrity)));
-        assertEquals(verificationData.skR1Payload, Hexler.toHexString(spcSkR1Raw.getPayload()));
+        assertEquals(verificationData.skR1Payload, Hexler.toHexString(spcEncryptedSkR1.getPayload()));
         assertEquals(verificationData.sk, Hexler.toHexString(spcSkR1.getSessionKey()));
-        assertEquals(verificationData.skR1Iv, Hexler.toHexString(spcSkR1Raw.getIv()));
+        assertEquals(verificationData.skR1Iv, Hexler.toHexString(spcEncryptedSkR1.getIv()));
         assertEquals(verificationData.r1, Hexler.toHexString(spcSkR1.getR1()));
         assertEquals(verificationData.skR1Integrity, Hexler.toHexString(spcSkR1.getIntegrity()));
         assertEquals(verificationData.skR1Integrity, Hexler.toHexString(tllvSkR1Integrity.getValue()));
         assertEquals(verificationData.r2, Hexler.toHexString(spcR2.getR2()));
-        assertEquals(verificationData.transactionId, Hexler.toHexString(tllvContainer.find(SpcTag.TRANSACTION_ID).getValue()));
-        assertEquals(verificationData.arSeed, Hexler.toHexString(tllvContainer.find(SpcTag.AR_SEED).getValue()));
+        assertEquals(verificationData.transactionId, Hexler.toHexString(tllvBlockIndex.find(SpcTag.TRANSACTION_ID).getValue()));
+        assertEquals(verificationData.arSeed, Hexler.toHexString(tllvBlockIndex.find(SpcTag.AR_SEED).getValue()));
         assertEquals(verificationData.spck, Hexler.toHexString(spcKey.getSpck()));
 
         // assert return tags

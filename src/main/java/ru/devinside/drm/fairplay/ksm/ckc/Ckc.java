@@ -1,7 +1,6 @@
 package ru.devinside.drm.fairplay.ksm.ckc;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class Ckc {
     private final CkcDataIv iv;
@@ -29,16 +28,13 @@ public class Ckc {
     }
 
     public byte[] getBytes() {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-        // TODO: use ByteBuffer backed serializer
-        try {
-            new CkcMessageSerializer(this).serializeTo(out);
-        } catch (IOException e) {
-            // Never happens, but but better be paranoiac
-            throw new RuntimeException(e);
-        }
-
-        return out.toByteArray();
+        byte[] payload = getPayload().getPayload();
+        ByteBuffer buffer = ByteBuffer.allocate(4 + 4 + CkcDataIv.CPC_DATA_IV_SIZE + 4 + payload.length);
+        buffer.putInt(getVersion());
+        buffer.putInt(getReserved());
+        buffer.put(getIv().getIv());
+        buffer.putInt(payload.length);
+        buffer.put(payload);
+        return buffer.array();
     }
 }

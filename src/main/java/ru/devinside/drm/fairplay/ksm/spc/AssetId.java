@@ -1,15 +1,13 @@
 package ru.devinside.drm.fairplay.ksm.spc;
 
-import ru.devinside.drm.fairplay.ksm.common.BinVal;
-
 public class AssetId {
-    private final BinVal val;
+    private final byte[] value; // TODO: always UTF-8?
 
-    public AssetId(BinVal val) {
-        this.val = val;
+    public AssetId(byte[] value) {
+        this.value = value;
     }
 
-    public BinVal getBinVal() {
-        return val;
+    public byte[] getBytes() {
+        return value;
     }
 }

@@ -9,7 +9,8 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import ru.devinside.drm.fairplay.ksm.secret.RandomContentKey;
+import ru.devinside.drm.fairplay.ksm.secret.ContentKey;
+import ru.devinside.drm.fairplay.ksm.secret.FpsCertificate;
 import ru.devinside.drm.fairplay.ksm.secret.StubDFunction;
 import ru.devinside.drm.fairplay.ksm.spc.*;
 
@@ -28,6 +29,7 @@ import static ru.devinside.drm.fairplay.ksm.TestUtils.readResourceBytes;
 
 @RunWith(Parameterized.class)
 public class DefaultKsmTemplateTest {
+    private final static String FPS_CERT_FILE_PATH = "/sdk-4.1.0/credentials/dev_certificate.der";
     private final static String DEV_PRIVATE_KEY_DER_FILE_PATH = "/sdk-4.1.0/credentials/dev_private_key.der";
     private final static String VERIFY_CKC_CMD_PATH = getResourcePath("/sdk-4.1.0/verification/tool/verify_ckc");
 
@@ -52,6 +54,7 @@ public class DefaultKsmTemplateTest {
     @Test
     public void verification() throws IOException {
         SpcSecurityService securityContext = new SpcSecurityService(
+                new FpsCertificate(readResourceBytes(FPS_CERT_FILE_PATH)),
                 new StubDFunction(),
                 readResourceBytes(DEV_PRIVATE_KEY_DER_FILE_PATH)
         );
@@ -60,9 +63,19 @@ public class DefaultKsmTemplateTest {
 
         SpcParser spcParser = new SpcParser();
         Spc spc = spcParser.parse(readResourceBytes(spcPath));
-        byte[] ckc = ksmTemplate.process(
+        byte[] ckc = ksmTemplate.compute(
                 spc,
-                assetId -> new RandomContentKey(),
+                ctx -> new ContentKey() {
+                    @Override
+                    public byte[] getKey() {
+                        return new byte[] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                    }
+
+                    @Override
+                    public byte[] getIv() {
+                        return new byte[] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                    }
+                },
                 clientServerProtocolCompatibility -> {}
         ).getBytes();
 

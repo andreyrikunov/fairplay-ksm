@@ -1,10 +1,10 @@
 package ru.devinside.drm.fairplay.ksm.common;
 
+import org.apache.commons.lang3.RandomUtils;
 import ru.devinside.drm.fairplay.ksm.spc.SpcTag;
 import ru.devinside.util.Hexler;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
+import java.nio.ByteBuffer;
 
 /**
  * Tag-length-length-value block
@@ -40,12 +40,7 @@ public class TllvBlock {
 
         int paddingSize = 32 - value.length % 16; // Extend to nearest 16 bytes + extra 16 bytes
         this.totalBlockLength = value.length + paddingSize;
-
-        try {
-            this.padding = SecureRandom.getInstanceStrong().generateSeed(paddingSize);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
-        }
+        this.padding = RandomUtils.nextBytes(paddingSize);
     }
 
     public long getTag() {
@@ -56,12 +51,22 @@ public class TllvBlock {
         return value;
     }
 
-    public int getTotalBlockLength() {
+    public int length() {
+        return Long.BYTES + Integer.BYTES + Integer.BYTES + value.length + padding.length;
+    }
+
+    private int getTotalBlockLength() {
         return totalBlockLength;
     }
 
-    public byte[] getPadding() {
-        return padding;
+    public byte[] asBytes() {
+        ByteBuffer out = ByteBuffer.allocate(length());
+        out.putLong(this.getTag());
+        out.putInt(this.getTotalBlockLength());
+        out.putInt(this.getValue().length);
+        out.put(value);
+        out.put(padding);
+        return out.array();
     }
 
     @Override

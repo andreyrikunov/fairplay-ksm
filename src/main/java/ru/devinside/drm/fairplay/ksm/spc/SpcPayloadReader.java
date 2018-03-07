@@ -5,9 +5,10 @@ import ru.devinside.drm.fairplay.ksm.common.TllvBlock;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
- * SCP TLLV blocks reader (iterator)
+ * SCP TLLV blocks reader
  */
 public class SpcPayloadReader implements Iterator<TllvBlock> {
     private final ByteBuffer payload;
@@ -23,6 +24,10 @@ public class SpcPayloadReader implements Iterator<TllvBlock> {
 
     @Override
     public TllvBlock next() {
+        if(!hasNext()) {
+            throw new NoSuchElementException();
+        }
+
         long tag = parseTag(payload);
         int totalBlockLength = parseTotalBlockLength(payload);
         int valueLength = parseValueLength(payload);
@@ -44,37 +49,6 @@ public class SpcPayloadReader implements Iterator<TllvBlock> {
         }
 
         return new TllvBlock(tag, value, totalBlockLength, padding);
-    }
-
-    @Deprecated
-    public SpcTllvIndex index() {
-        SpcTllvIndex tllvContainer = new SpcTllvIndex();
-        while(payload.hasRemaining()) {
-            long tag = parseTag(payload);
-            int totalBlockLength = parseTotalBlockLength(payload);
-            int valueLength = parseValueLength(payload);
-
-            if(valueLength >= totalBlockLength) {
-                throw new BadSpcException(String.format("Inconsistent TLLV block header: %s", tag));
-            }
-
-            byte[] value = new byte[valueLength];
-
-            if (valueLength > 0) {
-                payload.get(value);
-            }
-
-            int paddingLength = totalBlockLength - valueLength;
-            byte[] padding = new byte[paddingLength];
-            if(paddingLength > 0 ) {
-                payload.get(padding);
-            }
-
-            TllvBlock tllvBlock = new TllvBlock(tag, value, totalBlockLength, padding);
-            tllvContainer.add(tllvBlock);
-        }
-
-        return tllvContainer;
     }
 
     private static long parseTag(ByteBuffer payload) {

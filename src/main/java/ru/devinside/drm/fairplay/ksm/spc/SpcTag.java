@@ -40,15 +40,16 @@ public enum SpcTag {
     // A 4-byte value that identifies the version of FPS that the Apple device is using for this FPS transaction.
     PROTOCOL_VERSION_USED(0x5d81bcbcc7f61703L),
 
-    // A single 8-byte value. Indicates to the server that the content will be sent by AirPlay to an Apple TV box.
-    // Any other value means that content playback will occur on the requesting device.
-    STREAMING_INDICATOR_AIRPLAY_TO_APPLE_TV(0xabb0256a31843974L),
-
-    // A single 8-byte value. Indicates to the server that the content will be sent to an Apple digital AV adapter.
-    STREAMING_INDICATOR_APPLE_DIGITAL_AV_ADAPTER(0x5f9c8132b59f2fdeL),
+    // A single 8-byte value. Indicates whether content will be sent by AirPlay to an Apple TV box or to an Apple
+    // digital AV adapter or playback will occur on the requesting device.
+    STREAMING_INDICATOR(0xabb0256a31843974L),
 
     // Media playback information for rental and lease.
-    MEDIA_PLAYBACK_STATE(0xeb8efdf2b25ab3a0L),
+    MEDIA_PLAYBACK_STATE(0xeb8efdf2b25ab3a0L), // TODO: NOT IMPLEMENTED
+
+    // Client capabilities. The Capabilities TLLV was introduced in iOS 11 and communicates features supported by
+    // the client to KSM.
+    CAPABILITIES(0x9c02af3253c07fb2L),
 
     // An SPC message may contain reserved TLLV blocks with tag values not specified here - such blocks should be
     // ignored by KSM.
