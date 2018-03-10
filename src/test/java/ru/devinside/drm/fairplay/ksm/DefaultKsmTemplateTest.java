@@ -4,6 +4,8 @@ import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.PumpStreamHandler;
+import org.junit.Assume;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -34,6 +36,11 @@ public class DefaultKsmTemplateTest {
     private final static String VERIFY_CKC_CMD_PATH = getResourcePath("/sdk-4.1.0/verification/tool/verify_ckc");
 
     private String spcPath;
+
+    @Before
+    public void macOsOnly() {
+        Assume.assumeTrue(System.getProperty("os.name").toLowerCase().contains("mac"));
+    }
 
     @Rule
     public TemporaryFolder tmp = new TemporaryFolder();
