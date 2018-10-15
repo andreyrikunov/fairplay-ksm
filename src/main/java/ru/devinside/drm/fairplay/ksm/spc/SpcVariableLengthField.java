@@ -3,12 +3,12 @@ package ru.devinside.drm.fairplay.ksm.spc;
 import ru.devinside.drm.fairplay.ksm.common.BinValPadding;
 
 public enum SpcVariableLengthField {
-    ENCRYPTED_PAYLOAD;
+    ENCRYPTED_PAYLOAD(BinValPadding.PAD16);
 
-    private BinValPadding padding;
+    private final BinValPadding padding;
 
-    static {
-        ENCRYPTED_PAYLOAD.padding = BinValPadding.PAD16;
+    SpcVariableLengthField(BinValPadding padding) {
+        this.padding = padding;
     }
 
     public BinValPadding getPadding() {

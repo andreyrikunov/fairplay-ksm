@@ -12,7 +12,8 @@ public final class MockDerivedApplicationSecretKey extends DerivedApplicationSec
         super(new byte[] {});
     }
 
-    public byte[] getKey() {
+    @Override
+    public final byte[] getKey() {
         return DASK;
     }
 }

@@ -44,5 +44,20 @@ public class ClientServerProtocolCompatibilityChecker {
             return clientUsed != Collections.max(clientSupported) &&
                     clientUsed != Collections.max(serverProtocolVersion);
         }
+
+        @Override
+        public int getClientUsedVersion() {
+            return clientUsed;
+        }
+
+        @Override
+        public Collection<Integer> getClientSupportedVersions() {
+            return clientSupported;
+        }
+
+        @Override
+        public Collection<Integer> getServerSupportedVersions() {
+            return serverProtocolVersion;
+        }
     }
 }
